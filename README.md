@@ -40,7 +40,8 @@ To discover existing printers in your subnet, consider using [ping_discover_netw
 ```dart
 import 'package:esc_pos_printer/esc_pos_printer.dart';
 
-Printer.connect('192.168.0.123', port: 9100).then((printer) {
+Printer.connect('192.168.0.123', port: 9100).then((printer) async {
+    await printer.printQRCode('nhancv.com');
     printer.println('Regular: aA bB cC dD eE fF gG hH iI jJ kK lL mM nN oO pP qQ rR sS tT uU vV wW xX yY zZ');
     printer.println('Special 1: àÀ èÈ éÉ ûÛ üÜ çÇ ôÔ',
         styles: PosStyles(codeTable: PosCodeTable.westEur));
@@ -64,7 +65,8 @@ Printer.connect('192.168.0.123', port: 9100).then((printer) {
           width: PosTextSize.size2,
         ));
 
-    printer.cut();
+    printer.cut();   
+    printer.openCashDrawer();
     printer.disconnect();
   });
 ```
@@ -109,6 +111,16 @@ Print barcode:
 ```dart
 final List<int> barData = [1, 2, 3, 4, 5, 6, 7, 8, 9, 0, 4];
 printer.printBarcode(Barcode.upcA(barData));
+```
+
+Print QRCode:
+```dart
+await printer.printQRCode('nhancv.com');
+```
+
+Open Cash Drawer
+```dart
+printer.openCashDrawer();
 ```
 
 ## TODO
