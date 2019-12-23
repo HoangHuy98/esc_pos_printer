@@ -12,6 +12,8 @@ import 'dart:typed_data';
 import 'package:gbk_codec/gbk_codec.dart';
 import 'package:hex/hex.dart';
 import 'package:image/image.dart';
+import 'package:path_provider/path_provider.dart';
+import 'package:qr_flutter/qr_flutter.dart';
 import 'barcode.dart';
 import 'commands.dart';
 import 'enums.dart';
@@ -440,7 +442,20 @@ class Printer {
 
     // Adjust line spacing (for 16-unit line feeds): ESC 3 0x10 (HEX: 0x1b 0x33 0x10)
     sendRaw([27, 51, 16]);
+
+    // Calculate center position and left padding
+    // Paper size 68 mm = ? px
+    // Image size 36.5 mm = 300 px
+    final double paperSize = imageRotated.width * 68 / 36.5;
+    final double leftPadding = (paperSize - imageRotated.width) / 2;
+    final hexStr = leftPadding.round().toRadixString(16).padLeft(3, '0');
+    final hexPair = HEX.decode(hexStr);
     for (int i = 0; i < blobs.length; ++i) {
+      _socket.add(
+        Uint8List.fromList(
+          List.from(cPos.codeUnits)..addAll([hexPair[1], hexPair[0]]),
+        ),
+      );
       sendRaw(List.from(header)..addAll(blobs[i])..addAll('\n'.codeUnits));
     }
     // Reset line spacing: ESC 2 (HEX: 0x1b 0x32)
@@ -556,5 +571,30 @@ class Printer {
     // Print barcode
     final header = cBarcodePrint.codeUnits + [barcode.type.value];
     sendRaw(header + barcode.data + [0]);
+  }
+
+  /// Open cash drawer
+  void openCashDrawer() {
+    sendRaw([27, 112, 0, 25, 250]);
+  }
+
+  /// Print QR Code from text
+  Future<void> printQRCode(String text, {double imgSize = 300}) async {
+    try {
+      final uiImg = await QrPainter(
+            data: text,
+            version: QrVersions.auto,
+            gapless: false,
+          ).toImageData(imgSize);
+      final dir = await getTemporaryDirectory();
+      final pathName = '${dir.path}/tmp_qr.png';
+      final imageFile = File(pathName);
+      final imgFile = await imageFile.writeAsBytes(uiImg.buffer.asUint8List());
+      final img = decodeImage(imgFile.readAsBytesSync());
+
+      printImage(img);
+    } catch (e) {
+      print(e);
+    }
   }
 }

@@ -27,6 +27,14 @@ To discover existing printers in your subnet, consider using [ping_discover_netw
 
 **Note**: Your printer may not support some of the presented features (especially for underline styles, partial/full paper cutting, reverse feed, ...).
 
+## Install
+```
+  esc_pos_printer:
+    git:
+      url: git://github.com/nhancv/esc_pos_printer.git
+```
+
+
 ## Getting Started
 
 ```dart
